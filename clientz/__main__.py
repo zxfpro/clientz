@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from .core import Model
+from .core import product
 
 # --- Pydantic Models (Matching OpenAI Structures) ---
 
@@ -149,17 +149,11 @@ async def generate_mock_llm_response(prompt: str, stream: bool, model: str):
     """
     response_id = f"chatcmpl-{uuid.uuid4().hex}"
     created_time = int(time.time())
-    if model == 'your-model-name-1':
-        words = ["This", "is", "a", "simulated", "response", "from", "the", model, "model.", "It1", "demonstrates", "streaming."]
     
-    elif model == 'gpt-3.5-turbo':
-        words = ["This", "is", "a", "simulated", "response", "from", "the", model, "model.", "It2", "demonstrates", "streaming."]
+    words = product(prompt = prompt,model=model) if product(prompt = prompt,model=model) else 1
 
-    elif model == 'another-custom-model':
+    if words is None:
         words = ["This", "is", "a", "simulated", "response", "from", "the", model, "model.", "It3", "demonstrates", "streaming."]
-
-    else:
-        words = ["unknown."]
 
 
     if not stream:
@@ -285,9 +279,10 @@ class ModelList(BaseModel):
 async def list_models():
     # Replace with your actual list of models
     available_models = [
-        ModelCard(id="your-model-name-1"),
-        ModelCard(id="gpt-3.5-turbo"), # You can even list compatible OpenAI models if you proxy/route
-        ModelCard(id="another-custom-model"),
+        ModelCard(id="custom-gemini-2.5"),
+        ModelCard(id="custom-gpt-4.1-mini"), # You can even list compatible OpenAI models if you proxy/route
+        ModelCard(id="retriver_content"),
+        ModelCard(id="query_origin"),
     ]
     return ModelList(data=available_models)
 
