@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from .core import product
+from .core import product, Product
 
 # --- Pydantic Models (Matching OpenAI Structures) ---
 
@@ -112,7 +112,7 @@ app.add_middleware(
 )
 # --- End CORS Configuration ---
 
-
+prods = Product()
 
 # --- (Optional) Authentication Dependency ---
 async def verify_api_key(authorization: Optional[str] = Header(None)):
@@ -149,8 +149,8 @@ async def generate_mock_llm_response(prompt: str, stream: bool, model: str):
     """
     response_id = f"chatcmpl-{uuid.uuid4().hex}"
     created_time = int(time.time())
-    
-    words = product(prompt = prompt,model=model) if product(prompt = prompt,model=model) else 1
+
+    words = prods.product(prompt = prompt,model=model) if prods.product(prompt = prompt,model=model) else 1
 
     if words is None:
         words = ["This", "is", "a", "simulated", "response", "from", "the", model, "model.", "It3", "demonstrates", "streaming."]

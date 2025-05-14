@@ -63,39 +63,40 @@ from llmada import BianXieAdapter
 bx = BianXieAdapter()
 qur = Queryr(persist_dir='/Users/zhaoxuefeng/GitHub/test1/obsidian_kb/my_obsidian_notes')
 
-def product(prompt: str,model: str) -> list[str]:
 
-    if model == 'custom-gemini-2.5':
-        bx.set_model('gemini-2.5-flash-preview-04-17-nothinking')
-        result = bx.product(prompt)
-        return result.split(' ')
+
+
+
+
+class Product():
+    def __init__(self):
         
-    elif model == 'custom-gpt-4.1-mini':
-        bx.set_model('gpt-4.1-mini')
-        result = bx.product(prompt)
-        return result.split(' ')
-    elif model == 'retriver_content':
-        formatted_output_string = ""
-        for source in qur.retrieve(prompt):
-            data = source.to_dict()
-            formatted_output_string += format_node_for_chat(data)
-            formatted_output_string += "\n########## --- ###########\n"
-        result = formatted_output_string
-        return result.split(' ')
-    elif model == 'query_origin':
-        formatted_output_string = ""
-        result = qur.query(prompt)
-        result2 = show(result)
-        return result2.split(' ')
 
-    return None
+    def product(self,prompt: str,model: str) -> list[str]:
 
+        if model == 'custom-gemini-2.5':
+            bx.set_model('gemini-2.5-flash-preview-04-17-nothinking')
+            result = bx.product(prompt)
+            return result.split(' ')
+            
+        elif model == 'custom-gpt-4.1-mini':
+            bx.set_model('gpt-4.1-mini')
+            result = bx.product(prompt)
+            return result.split(' ')
+        elif model == 'retriver_content':
+            formatted_output_string = ""
+            for source in qur.retrieve(prompt):
+                data = source.to_dict()
+                formatted_output_string += format_node_for_chat(data)
+                formatted_output_string += "\n########## --- ###########\n"
+            result = formatted_output_string
+            return result.split(' ')
+        elif model == 'query_origin':
+            formatted_output_string = ""
+            result = qur.query(prompt)
+            result2 = show(result)
+            return result2.split(' ')
 
+        return None
 
-
-# bx = BianXieAdapter()
-#     result = bx.product(prompt)
-
-#     # words = ["This", "is", "a", "simulated", "response", "from", "the", model, "model.", "It", "demonstrates", "streaming."]
-#     words = result.split(' ')
 
