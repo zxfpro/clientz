@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from .core import product
+# from .core import product, Product
 
 # --- Pydantic Models (Matching OpenAI Structures) ---
 
@@ -113,6 +113,22 @@ app.add_middleware(
 # --- End CORS Configuration ---
 
 
+# prods = Product()
+from .core import ChatBox
+
+import importlib.resources
+import yaml
+def load_config():
+    with importlib.resources.open_text('clientz', 'config.yaml') as f:
+        return yaml.safe_load(f)
+
+
+dicts = load_config()
+ModelCards = dicts.get("ModelCards")
+Custom = dicts.get("Custom")
+
+chatbox = ChatBox()
+
 
 # --- (Optional) Authentication Dependency ---
 async def verify_api_key(authorization: Optional[str] = Header(None)):
@@ -149,15 +165,17 @@ async def generate_mock_llm_response(prompt: str, stream: bool, model: str):
     """
     response_id = f"chatcmpl-{uuid.uuid4().hex}"
     created_time = int(time.time())
-    
-    words = product(prompt = prompt,model=model) if product(prompt = prompt,model=model) else 1
 
-    if words is None:
-        words = ["This", "is", "a", "simulated", "response", "from", "the", model, "model.", "It3", "demonstrates", "streaming."]
+    # words = prods.product(prompt = prompt,model=model) if prods.product(prompt = prompt,model=model) else 1
+
+    # if words is None:
+    #     words = ["This", "is", "a", "simulated", "response", "from", "the", model, "model.", "It3", "demonstrates", "streaming."]
 
 
     if not stream:
-        full_response = " ".join(words)
+        full_response = chatbox.product(prompt = prompt,model=model)
+        # full_response = " ".join(words)
+        words = full_response.split(' ')
         choice = Choice(
             index=0,
             message=ChatCompletionMessage(role="assistant", content=full_response),
@@ -181,8 +199,10 @@ async def generate_mock_llm_response(prompt: str, stream: bool, model: str):
             ).model_dump_json() # Use model_dump_json() for Pydantic v2
 
             # Subsequent chunks: Send content word by word
-            for i, word in enumerate(words):
-                chunk_choice = ChunkChoice(index=0, delta=DeltaMessage(content=f" {word}"), finish_reason=None)
+
+            for i, word in enumerate(chatbox.stream_product(prompt = prompt,model=model)):
+            # for i, word in enumerate(words):
+                chunk_choice = ChunkChoice(index=0, delta=DeltaMessage(content=f"{word}"), finish_reason=None)
                 yield ChatCompletionChunkResponse(
                     id=response_id, model=model, choices=[chunk_choice], created=created_time
                 ).model_dump_json()
@@ -277,13 +297,14 @@ class ModelList(BaseModel):
 
 @app.get("/v1/models", response_model=ModelList,  tags=["Models"])
 async def list_models():
-    # Replace with your actual list of models
-    available_models = [
-        ModelCard(id="custom-gemini-2.5"),
-        ModelCard(id="custom-gpt-4.1-mini"), # You can even list compatible OpenAI models if you proxy/route
-        ModelCard(id="retriver_content"),
-        ModelCard(id="query_origin"),
-    ]
+    # Replace with your actual list of models # TODO
+    available_models = [ModelCard(id=ModelCardName) for ModelCardName in ModelCards + Custom]
+    # available_models = [
+    #     ModelCard(id="gpt-4.1"),
+    #     ModelCard(id="gemini-2.5-flash-preview-04-17-nothinking"), # You can even list compatible OpenAI models if you proxy/route
+    #     ModelCard(id="gemini-2.5-flash-preview-04-17-thinking"),
+    #     ModelCard(id="query_origin"),
+    # ]
     return ModelList(data=available_models)
 
 
@@ -311,8 +332,8 @@ if __name__ == "__main__":
     # 使用 uvicorn.run() 来启动服务器
     # 参数对应于命令行选项
     uvicorn.run(
-        "clientz.__main__:app", # 要加载的应用，格式是 "module_name:variable_name"
+        app, # 要加载的应用，格式是 "module_name:variable_name"
         host="0.0.0.0",
         port=args.port,
-        reload=True  # 启用热重载
+        reload=False  # 启用热重载
     )
