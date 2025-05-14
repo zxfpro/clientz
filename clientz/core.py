@@ -65,9 +65,6 @@ qur = Queryr(persist_dir='/Users/zhaoxuefeng/GitHub/test1/obsidian_kb/my_obsidia
 
 
 
-
-
-
 class Product():
     def __init__(self):
         
