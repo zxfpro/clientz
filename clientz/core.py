@@ -67,7 +67,7 @@ qur = Queryr(persist_dir='/Users/zhaoxuefeng/GitHub/test1/obsidian_kb/my_obsidia
 
 class Product():
     def __init__(self):
-        
+        pass
 
     def product(self,prompt: str,model: str) -> list[str]:
 
