@@ -311,7 +311,7 @@ if __name__ == "__main__":
     # 使用 uvicorn.run() 来启动服务器
     # 参数对应于命令行选项
     uvicorn.run(
-        "clientz.__main__:app", # 要加载的应用，格式是 "module_name:variable_name"
+        app, # 要加载的应用，格式是 "module_name:variable_name"
         host="0.0.0.0",
         port=args.port,
         reload=True  # 启用热重载
