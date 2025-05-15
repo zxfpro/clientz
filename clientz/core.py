@@ -1,5 +1,7 @@
 import re
 from typing import Dict, Any
+from querypipz import Queryr
+from llmada import BianXieAdapter
 
 def format_node_for_chat(node_data: Dict[str, Any]) -> str:
     """
@@ -58,42 +60,47 @@ def show(xx):
     return xx.response +"\n\n"+ xx.get_formatted_sources()
 
 
-from querypipz import Queryr
-from llmada import BianXieAdapter
-bx = BianXieAdapter()
-qur = Queryr(persist_dir='/Users/zhaoxuefeng/GitHub/test1/obsidian_kb/my_obsidian_notes')
+ModelCards = ["gpt-4.1",
+             "gemini-2.5-flash-preview-04-17-nothinking",
+             "gemini-2.5-flash-preview-04-17-thinking",
+             "query_origin",
+             "query1"]
 
+class ChatBox():
+    def __init__(self) -> None:
+        self.bx = BianXieAdapter()
+        self.qur = Queryr(persist_dir='/Users/zhaoxuefeng/GitHub/test1/obsidian_kb/my_obsidian_notes')
+        self.model_pool = ModelCards
 
-
-class Product():
-    def __init__(self):
-        pass
-
-    def product(self,prompt: str,model: str) -> list[str]:
-
-        if model == 'custom-gemini-2.5':
-            bx.set_model('gemini-2.5-flash-preview-04-17-nothinking')
-            result = bx.product(prompt)
-            return result.split(' ')
-            
-        elif model == 'custom-gpt-4.1-mini':
-            bx.set_model('gpt-4.1-mini')
-            result = bx.product(prompt)
-            return result.split(' ')
-        elif model == 'retriver_content':
+    def product(self,prompt: str, model: str) -> str:
+        if model in self.model_pool:
+            self.bx.set_model(model)
+            return self.bx.product(prompt)
+        elif model == 'rag':
+            result = self.qur.query(prompt)
+            return show(result)
+        elif model == 'work':
             formatted_output_string = ""
-            for source in qur.retrieve(prompt):
+            for source in self.qur.retrieve(prompt):
                 data = source.to_dict()
                 formatted_output_string += format_node_for_chat(data)
                 formatted_output_string += "\n########## --- ###########\n"
             result = formatted_output_string
-            return result.split(' ')
-        elif model == 'query_origin':
+            return result
+        else:
+            return 'pass'
+    def stream_product(self,prompt: str, model: str) -> str:
+        if model in self.model_pool:
+            self.bx.set_model(model)
+            for word in self.bx.product_stream(prompt):
+                yield word
+        elif model == 'work':
             formatted_output_string = ""
-            result = qur.query(prompt)
-            result2 = show(result)
-            return result2.split(' ')
-
-        return None
-
-
+            for source in self.qur.retrieve(prompt):
+                data = source.to_dict()
+                formatted_output_string += format_node_for_chat(data)
+                formatted_output_string += "\n########## --- ###########\n"
+            result = formatted_output_string
+            yield result
+        else:
+            yield 'pass'
