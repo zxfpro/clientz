@@ -115,9 +115,20 @@ app.add_middleware(
 
 # prods = Product()
 from .core import ChatBox
+
+import importlib.resources
+import yaml
+def load_config():
+    with importlib.resources.open_text('clientz', 'config.yaml') as f:
+        return yaml.safe_load(f)
+
+
+dicts = load_config()
+ModelCards = dicts.get("ModelCards")
+Custom = dicts.get("Custom")
+
 chatbox = ChatBox()
 
-from .core import ModelCards
 
 # --- (Optional) Authentication Dependency ---
 async def verify_api_key(authorization: Optional[str] = Header(None)):
@@ -287,7 +298,7 @@ class ModelList(BaseModel):
 @app.get("/v1/models", response_model=ModelList,  tags=["Models"])
 async def list_models():
     # Replace with your actual list of models # TODO
-    available_models = [ModelCard(id=ModelCardName) for ModelCardName in ModelCards]
+    available_models = [ModelCard(id=ModelCardName) for ModelCardName in ModelCards + Custom]
     # available_models = [
     #     ModelCard(id="gpt-4.1"),
     #     ModelCard(id="gemini-2.5-flash-preview-04-17-nothinking"), # You can even list compatible OpenAI models if you proxy/route

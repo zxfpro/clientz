@@ -1,0 +1,12 @@
+query_persist_dir: /Users/zhaoxuefeng/GitHub/test1/obsidian_kb/my_obsidian_notes
+WORK_CANVAS_PATH:
+- /工程系统级设计/能力级别/人体训练设计/人体训练设计.canvas
+ModelCards:
+- gpt-4.1
+- gemini-2.5-flash-preview-04-17-nothinking
+- gemini-2.5-flash-preview-04-17-thinking
+Custom:
+- config_info
+- query_origin
+- rag_v1
+- retriver_v1
