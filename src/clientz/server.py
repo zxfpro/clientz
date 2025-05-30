@@ -1,26 +1,26 @@
+""" server save """
 import time
 import uuid
 import asyncio
-import random
-from typing import List, Optional, Dict, Any, Union, Literal
-
-from fastapi import FastAPI, Request, Depends, HTTPException, Header
-from fastapi.responses import StreamingResponse
+import importlib.resources
+from typing import List, Optional, Dict, Union, Literal
+from fastapi import FastAPI, HTTPException, Header
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
-from fastapi.middleware.cors import CORSMiddleware
+import yaml
+from .core import ChatBox
 
-# from .core import product, Product
-
-# --- Pydantic Models (Matching OpenAI Structures) ---
 
 class ChatMessage(BaseModel):
+    """ x """
     role: Literal["system", "user", "assistant", "tool"]
     content: Optional[str] = None
     # tool_calls: Optional[...] # Add if you support tool/function calling
     # tool_call_id: Optional[...] # Add if you support tool/function calling
 
 class ChatCompletionRequest(BaseModel):
+    """ x """
     model: str  # The model name you want your service to expose
     messages: List[ChatMessage]
     temperature: Optional[float] = 0.7
@@ -38,22 +38,27 @@ class ChatCompletionRequest(BaseModel):
 # --- Response Models (Non-Streaming) ---
 
 class ChatCompletionMessage(BaseModel):
+    """ x """
     role: Literal["assistant", "tool"] # Usually assistant
     content: Optional[str] = None
     # tool_calls: Optional[...]
 
 class Choice(BaseModel):
+    """ x """
     index: int
     message: ChatCompletionMessage
-    finish_reason: Optional[Literal["stop", "length", "tool_calls", "content_filter", "function_call"]] = "stop"
+    finish_reason: Optional[Literal["stop", "length", "tool_calls",
+                                    "content_filter", "function_call"]] = "stop"
     # logprobs: Optional[...]
 
 class UsageInfo(BaseModel):
+    """ x """
     prompt_tokens: int = 0 # You might need to implement token counting
     completion_tokens: int = 0
     total_tokens: int = 0
 
 class ChatCompletionResponse(BaseModel):
+    """ x """
     id: str = Field(default_factory=lambda: f"chatcmpl-{uuid.uuid4().hex}")
     object: Literal["chat.completion"] = "chat.completion"
     created: int = Field(default_factory=lambda: int(time.time()))
@@ -65,24 +70,28 @@ class ChatCompletionResponse(BaseModel):
 # --- Response Models (Streaming) ---
 
 class DeltaMessage(BaseModel):
+    """ x """
     role: Optional[Literal["system", "user", "assistant", "tool"]] = None
     content: Optional[str] = None
     # tool_calls: Optional[...]
 
 class ChunkChoice(BaseModel):
+    """ x """
     index: int
     delta: DeltaMessage
-    finish_reason: Optional[Literal["stop", "length", "tool_calls", "content_filter", "function_call"]] = None
+    finish_reason: Optional[Literal["stop", "length", "tool_calls",
+                                    "content_filter", "function_call"]] = None
     # logprobs: Optional[...]
 
 class ChatCompletionChunkResponse(BaseModel):
+    """ x """
     id: str = Field(default_factory=lambda: f"chatcmpl-{uuid.uuid4().hex}")
     object: Literal["chat.completion.chunk"] = "chat.completion.chunk"
     created: int = Field(default_factory=lambda: int(time.time()))
     model: str
     choices: List[ChunkChoice]
     # system_fingerprint: Optional[str] = None
-    # usage: Optional[UsageInfo] = None # Usage is typically not included in chunks until the *very* end in some implementations or omitted
+    # usage: Optional[UsageInfo] = None
 
 # --- FastAPI App ---
 
@@ -113,12 +122,9 @@ app.add_middleware(
 # --- End CORS Configuration ---
 
 
-# prods = Product()
-from .core import ChatBox
 
-import importlib.resources
-import yaml
 def load_config():
+    """ load_config """
     with importlib.resources.open_text('clientz', 'config.yaml') as f:
         return yaml.safe_load(f)
 
@@ -166,14 +172,8 @@ async def generate_mock_llm_response(prompt: str, stream: bool, model: str):
     response_id = f"chatcmpl-{uuid.uuid4().hex}"
     created_time = int(time.time())
 
-    # words = prods.product(prompt = prompt,model=model) if prods.product(prompt = prompt,model=model) else 1
-
-    # if words is None:
-    #     words = ["This", "is", "a", "simulated", "response", "from", "the", model, "model.", "It3", "demonstrates", "streaming."]
-
-
     if not stream:
-        full_response = chatbox.product(prompt = prompt,model=model)
+        full_response = chatbox.product(prompt_with_history = prompt,model=model)
         # full_response = " ".join(words)
         words = full_response.split(' ')
         choice = Choice(
@@ -182,7 +182,9 @@ async def generate_mock_llm_response(prompt: str, stream: bool, model: str):
             finish_reason="stop"
         )
         # Simulate token counts (highly inaccurate)
-        usage = UsageInfo(prompt_tokens=len(prompt.split()), completion_tokens=len(words), total_tokens=len(prompt.split()) + len(words))
+        usage = UsageInfo(prompt_tokens=len(prompt.split()),
+                          completion_tokens=len(words),
+                          total_tokens=len(prompt.split()) + len(words))
         return ChatCompletionResponse(
             id=response_id,
             model=model,
@@ -193,16 +195,19 @@ async def generate_mock_llm_response(prompt: str, stream: bool, model: str):
     else:
         async def stream_generator():
             # First chunk: Send role
-            first_chunk_choice = ChunkChoice(index=0, delta=DeltaMessage(role="assistant"), finish_reason=None)
+            first_chunk_choice = ChunkChoice(index=0, delta=DeltaMessage(role="assistant"),
+                                                                finish_reason=None)
             yield ChatCompletionChunkResponse(
                 id=response_id, model=model, choices=[first_chunk_choice], created=created_time
             ).model_dump_json() # Use model_dump_json() for Pydantic v2
 
             # Subsequent chunks: Send content word by word
 
-            for i, word in enumerate(chatbox.stream_product(prompt = prompt,model=model)):
-            # for i, word in enumerate(words):
-                chunk_choice = ChunkChoice(index=0, delta=DeltaMessage(content=f"{word}"), finish_reason=None)
+            for i, word in enumerate(chatbox.stream_product(prompt_with_history = prompt,
+                                                            model=model)):
+                chunk_choice = ChunkChoice(index=0,
+                                           delta=DeltaMessage(content=f"{word}"),
+                                                                finish_reason=None)
                 yield ChatCompletionChunkResponse(
                     id=response_id, model=model, choices=[chunk_choice], created=created_time
                 ).model_dump_json()
@@ -243,11 +248,13 @@ async def create_chat_completion(
     request: ChatCompletionRequest,
     # token: str = Depends(verify_api_key) # Uncomment to enable authentication
 ):
+    """ use """
     # --- 1. Prepare Prompt for your LLM ---
     # This is highly dependent on your specific model.
     # You might concatenate messages, add special tokens, etc.
     # Example simplistic prompt concatenation:
-    prompt_for_llm = "\n".join([f"{msg.role}: {msg.content}" for msg in request.messages if msg.content])
+    prompt_for_llm = "\n".join([f"{msg.role}: {msg.content}"
+                                for msg in request.messages if msg.content])
     print("-" * 20)
     print(f"Received Request for model: {request.model}")
     print(f"Streaming: {request.stream}")
@@ -265,46 +272,46 @@ async def create_chat_completion(
         )
     except Exception as e:
         print(f"Error calling LLM backend: {e}")
-        raise HTTPException(status_code=500, detail=f"LLM backend error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"LLM backend error: {str(e)}") from e
 
 
     # --- 3. Format and Return Response ---
     if request.stream:
         if not isinstance(response_data, EventSourceResponse):
-             raise HTTPException(status_code=500, detail="Streaming response was not generated correctly.")
+            raise HTTPException(status_code=500, detail=
+                                 "Streaming response was not generated correctly.")
         return response_data # Return the SSE stream directly
     else:
         if not isinstance(response_data, ChatCompletionResponse):
-             raise HTTPException(status_code=500, detail="Non-streaming response was not generated correctly.")
+            raise HTTPException(status_code=500,
+                                 detail="Non-streaming response was not generated correctly.")
         return response_data # FastAPI automatically converts Pydantic model to JSON
 
 # --- Add Root Endpoint for Health Check/Info ---
 @app.get("/")
 async def root():
+    """ x """
     return {"message": "LLM Service is running."}
 
 # --- (Optional) Add other OpenAI-like endpoints if needed ---
 # For example, /v1/models to list available models
 class ModelCard(BaseModel):
+    """ x """
     id: str
     object: Literal["model"] = "model"
     created: int = Field(default_factory=lambda: int(time.time()))
     owned_by: str = "zhaoxuefeng" # Customize as needed
 
 class ModelList(BaseModel):
+    """ x """
     object: Literal["list"] = "list"
     data: List[ModelCard] = []
 
 @app.get("/v1/models", response_model=ModelList,  tags=["Models"])
 async def list_models():
-    # Replace with your actual list of models # TODO
+    """ x """
+    # Replace with your actual list of models
     available_models = [ModelCard(id=ModelCardName) for ModelCardName in ModelCards + Custom]
-    # available_models = [
-    #     ModelCard(id="gpt-4.1"),
-    #     ModelCard(id="gemini-2.5-flash-preview-04-17-nothinking"), # You can even list compatible OpenAI models if you proxy/route
-    #     ModelCard(id="gemini-2.5-flash-preview-04-17-thinking"),
-    #     ModelCard(id="query_origin"),
-    # ]
     return ModelList(data=available_models)
 
 
