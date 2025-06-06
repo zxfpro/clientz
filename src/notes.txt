@@ -1,1 +1,1 @@
-明天要理发明天要理发明天要理发我买鞋油我买鞋油
+明天要理发明天要理发明天要理发我买鞋油我买鞋油pytest控制执行顺序的方法包括使用conftest.py中的pytest_collection_modifyitems钩子函数、使用pytest.mark.run(order=...)标记、以及通过命令行选项--order来指定执行顺序。
