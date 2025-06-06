@@ -203,8 +203,19 @@ async def generate_mock_llm_response(prompt: str, stream: bool, model: str):
 
             # Subsequent chunks: Send content word by word
 
-            for i, word in enumerate(chatbox.stream_product(prompt_with_history = prompt,
-                                                            model=model)):
+            # for i, word in enumerate(chatbox.stream_product(prompt_with_history = prompt,
+            #                                                 model=model)):
+            #     chunk_choice = ChunkChoice(index=0,
+            #                                delta=DeltaMessage(content=f"{word}"),
+            #                                                     finish_reason=None)
+            #     yield ChatCompletionChunkResponse(
+            #         id=response_id, model=model, choices=[chunk_choice], created=created_time
+            #     ).model_dump_json()
+            #     await asyncio.sleep(0.05) # Simulate token generation time
+
+
+            async for word in chatbox.astream_product(prompt_with_history = prompt,
+                                                            model=model):
                 chunk_choice = ChunkChoice(index=0,
                                            delta=DeltaMessage(content=f"{word}"),
                                                                 finish_reason=None)
@@ -212,6 +223,7 @@ async def generate_mock_llm_response(prompt: str, stream: bool, model: str):
                     id=response_id, model=model, choices=[chunk_choice], created=created_time
                 ).model_dump_json()
                 await asyncio.sleep(0.05) # Simulate token generation time
+
 
             # Final chunk: Send finish reason
             final_chunk_choice = ChunkChoice(index=0, delta=DeltaMessage(), finish_reason="stop")

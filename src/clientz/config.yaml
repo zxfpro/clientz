@@ -7,7 +7,6 @@ ModelCards:
 - cus-gemini-2.5-flash-preview-04-17-thinking
 Custom:
 - config_info
-- query_origin
-- retriver_v1
-- chat_with_long_memory
-- chat_with_long_memory_v2_computer_mode
+- chat_with_long_memory_v2
+- chat_with_Agent_notes
+- Custom_Agent_Latest
