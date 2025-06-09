@@ -120,7 +120,7 @@ class ChatBox():
             else:
                 print(f"文件 '{self.file_path}' 未发生变化。")
         except FileNotFoundError:
-            print(f"文件 '{self.file_path}' 不存在。")
+            print(f"文件 '{self.file_path}' 不存在。") #TODO
             self._last_modified_time = None # 文件不存在时重置状态
         except Exception as e:
             print(f"检查文件时发生错误: {e}")
@@ -396,6 +396,10 @@ class ChatBox():
                 with open('notes.txt','r') as f:
                     text = f.read()
                 return text
+            
+            print('############# prompt_with_history #############')
+            print(prompt_with_history)
+            print('############# prompt_no_history #############')
 
             if not self.chat_with_agent_notes_object:
                 from agentflowz.main import AgentFactory,AgentType,EasyAgentz
@@ -404,6 +408,8 @@ class ChatBox():
                 agt = EasyAgentz(agent)
                 self.chat_with_agent_notes_object = agt
 
+
+            
             result = await self.chat_with_agent_notes_object.run(prompt_no_history)
             yield result
 
