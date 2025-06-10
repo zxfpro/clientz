@@ -282,7 +282,7 @@ class ChatBox():
 
                 agt = EasyAgentz(agent)
                 self.chat_with_agent_notes_object = agt
-            
+
             # self.chat_with_agent_notes_object.run()
             import asyncio
             loop = asyncio.get_event_loop()
@@ -314,7 +314,7 @@ class ChatBox():
             self.bx.set_model(model[4:])
             for word in self.bx.product_stream(prompt_with_history):
                 yield word
-        
+
         elif model == "config_info":
             yield f"query_dir: {self.query_persist_dir}, dicts {str(self.dicts)}"
 
@@ -396,7 +396,7 @@ class ChatBox():
                 with open('notes.txt','r') as f:
                     text = f.read()
                 return text
-            
+
             print('############# prompt_with_history #############')
             print(prompt_with_history)
             print('############# prompt_no_history #############')
@@ -408,8 +408,6 @@ class ChatBox():
                 agt = EasyAgentz(agent)
                 self.chat_with_agent_notes_object = agt
 
-
-            
             result = await self.chat_with_agent_notes_object.run(prompt_no_history)
             yield result
 

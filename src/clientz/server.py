@@ -342,7 +342,7 @@ if __name__ == "__main__":
         metavar='PORT',
         type=int,
         nargs='?', # 端口是可选的
-        default=8000,
+        default=8008,
         help='Specify alternate port [default: 8000]'
     )
 
