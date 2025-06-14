@@ -6,6 +6,7 @@ from typing import Dict, Any
 import yaml
 from llmada import BianXieAdapter
 from querypipz.director import BuilderFactory,BuilderType,Director
+from agentflowz.main import AgentFactory,AgentType,EasyAgentz
 
 def load_config():
     """ load config """
@@ -90,6 +91,21 @@ def extract_last_user_input(dialogue_text):
     else:
         return None
 
+
+def extra_docs(inputs:str)->dict:
+    """ docs """
+    pattern1 = r'<context>(.*?)<\/context>'
+    pattern2 = r'<source id="(\d+)">(.*?)<\/source>'
+
+    match = re.search(pattern1, inputs,re.DOTALL)
+
+    if match:
+        sources = match.group(1).strip()
+        matches = re.findall(pattern2, sources)
+
+    result = {int(id): content for id, content in matches}
+    return result
+
 class ChatBox():
     """ chatbox """
     def __init__(self) -> None:
@@ -120,7 +136,7 @@ class ChatBox():
             else:
                 print(f"文件 '{self.file_path}' 未发生变化。")
         except FileNotFoundError:
-            print(f"文件 '{self.file_path}' 不存在。") #TODO
+            print(f"文件 '{self.file_path}' 不存在。")
             self._last_modified_time = None # 文件不存在时重置状态
         except Exception as e:
             print(f"检查文件时发生错误: {e}")
@@ -144,160 +160,11 @@ class ChatBox():
 
     def product(self,prompt_with_history: str, model: str) -> str:
         """ x """
+        prompt_with_history, model
         return ''
 
-    def stream_product(self,prompt_with_history: str, model: str) -> Any:
-        """
-        # 只需要修改这里
-        """
-        self.check_and_trigger()
-        if model[4:] in self.model_pool:
-            self.bx.set_model(model[4:])
-            for word in self.bx.product_stream(prompt_with_history):
-                yield word
-        elif model == "config_info":
-            yield f"query_dir: {self.query_persist_dir}, dicts {str(self.dicts)}"
-
-        elif model == 'retriver_v1':
-            pass
-
-        elif model == 'chat_with_long_memory':
-            # V1
-            # 单纯的向量库的管理方式
-            self.bx.set_model("gemini-2.5-flash-preview-04-17-nothinking")
-            query = director.construct()
-            prompt_no_history = extract_last_user_input(prompt_with_history)
-            print('prompt_no_history->',prompt_no_history)
-            print('############# prompt_no_history START #############')
-            print(prompt_no_history)
-            print('############# prompt_no_history END #############')
-
-
-            if prompt_with_history == "->上传":
-                print('上传')
-                # 上传 (update)
-                query.update('\n'.join(chat_history))
-
-            relevant_memories = query.retrieve(prompt_no_history)
-            memories_str = '\n'.join([i.text for i in relevant_memories])
-            print('############# RETRIVER START #############')
-            print(memories_str)
-            print('############# RETRIVER END #############')
-            our_messages = [{"role": "user", "content": prompt_no_history}]
-            # prompt_with_history
-            # prompt_no_history
-
-            prompt = f"""
-这是我们之前的聊天历史 你可以试做长期记忆, 里面的信息作为参考:
-
-{memories_str}
-
----
-
-{prompt_with_history}
-
-"""
-            # prompt_with_history = f"用户长期记忆: {memories_str}" + prompt_with_history
-
-            assistant_info = ''
-            for word in self.bx.product_stream(prompt):
-
-                yield word
-                assistant_info += word
-
-            our_messages.append({"role": "assistant", "content": assistant_info})
-            inbound_information = '\n'.join([f"{i['role']}:{i['content']}" for i in our_messages])
-            print('############# Inbound START #############')
-            print(inbound_information)
-            print('############# Inbound END #############')
-            query.update(inbound_information)
-
-        elif model == 'chat_with_long_memory_v2_computer_mode':
-            # V1
-            # 单纯的向量库的管理方式
-            # 电脑 内存就是对应chat_history
-            # 硬盘 + 内置硬盘 其实就是 大模型潜意识与知识库维度
-            # 还要再加一些 寄存器的方式
-            self.bx.set_model("gemini-2.5-flash-preview-04-17-nothinking")
-            query = director.construct()
-            if len(prompt_with_history.split('\n')) == 1:
-                query.retriever = None
-            prompt_no_history = extract_last_user_input(prompt_with_history)
-            print('prompt_no_history->',prompt_no_history)
-            print('############# prompt_no_history START #############')
-            print(prompt_no_history)
-            print('############# prompt_no_history END #############')
-
-
-            if prompt_no_history == "->上传":
-                print('上传')
-                # 上传 (update)
-                query.update('\n'.join(prompt_with_history))
-
-            relevant_memories = query.retrieve_search(prompt_no_history)
-            memories_str = '\n'.join([i.text for i in relevant_memories])
-            print('############# RETRIVER START #############')
-            print(memories_str)
-            print('############# RETRIVER END #############')
-            our_messages = [{"role": "user", "content": prompt_no_history}]
-            # prompt_with_history
-            # prompt_no_history
-            # prompt_with_history = f"用户长期记忆: {memories_str}" + prompt_with_history
-
-            system_prompt = ""
-            prompt = system_prompt +"\n"+ memories_str +"\n"+prompt_with_history
-
-            assistant_info = ''
-            for word in self.bx.product_stream(prompt):
-                yield word
-                assistant_info += word
-
-            our_messages.append({"role": "assistant", "content": assistant_info})
-            inbound_information = '\n'.join([f"{i['role']}:{i['content']}" for i in our_messages])
-            print('############# Inbound START #############')
-            print(inbound_information)
-            print('############# Inbound END #############')
-            query.update(inbound_information)
-
-        elif model == 'chat_with_Agent_notes':
-            # V1
-            # 单纯的向量库的管理方式
-            # 电脑 内存就是对应chat_history
-            # 硬盘 + 内置硬盘 其实就是 大模型潜意识与知识库维度
-            # 还要再加一些 寄存器的方式
-            def take_notes(text: str) -> None:
-                """Some important contents can be recorded"""
-                with open('notes.txt','a') as f:
-                    f.write(text)
-
-            def read_notes() -> str:
-                """Read the important contents that were once recorded"""
-                with open('notes.txt','r') as f:
-                    text = f.read()
-                return text
-
-            if not self.chat_with_agent_notes_object:
-                from agentflowz.main import AgentFactory,AgentType,EasyAgentz
-                agent = AgentFactory(AgentType.ReactAgent,tools = [take_notes,read_notes])
-
-                agt = EasyAgentz(agent)
-                self.chat_with_agent_notes_object = agt
-
-            # self.chat_with_agent_notes_object.run()
-            import asyncio
-            loop = asyncio.get_event_loop()
-            future = asyncio.ensure_future(self.chat_with_agent_notes_object.run())
-            result = loop.run_until_complete(future)
-            print(result,'ss')
-            yield result
-
-
-        else:
-            yield 'pass'
-
-
     def init_lazy_parameter(self):
-        # 一个懒加载的初始化头部
+        """ 一个懒加载的初始化头部 """
         self.chat_with_agent_notes_object = None
 
 
@@ -363,20 +230,33 @@ class ChatBox():
             print('############# Inbound END #############')
             query.update(inbound_information)
 
+        elif model == 'Experts_V1':
+            print(prompt_with_history,'prompt_with_history')
+            doc_dict = extra_docs(prompt_with_history)
+            print(doc_dict,'doc_dict')
+            if not self.chat_with_agent_notes_object:
+                agent = AgentFactory(AgentType.ReactAgent,tools = [take_notes,read_notes])
+
+                agt = EasyAgentz(agent)
+                self.chat_with_agent_notes_object = agt
+
+            result = await self.chat_with_agent_notes_object.run(prompt_no_history)
+            yield result
+
+
         elif model == 'chat_with_Agent_notes':
             def take_notes(text: str) -> None:
                 """Some important contents can be recorded"""
-                with open('notes.txt','a') as f:
+                with open('notes.txt','a',encoding="utf-8") as f:
                     f.write(text)
 
             def read_notes() -> str:
                 """Read the important contents that were once recorded"""
-                with open('notes.txt','r') as f:
+                with open('notes.txt','r',encoding="utf-8") as f:
                     text = f.read()
                 return text
 
             if not self.chat_with_agent_notes_object:
-                from agentflowz.main import AgentFactory,AgentType,EasyAgentz
                 agent = AgentFactory(AgentType.ReactAgent,tools = [take_notes,read_notes])
 
                 agt = EasyAgentz(agent)
@@ -388,12 +268,12 @@ class ChatBox():
         elif model == 'Custom_Agent_Latest':
             def take_notes(text: str) -> None:
                 """Some important contents can be recorded"""
-                with open('notes.txt','a') as f:
+                with open('notes.txt','a',encoding="utf-8") as f:
                     f.write(text)
 
             def read_notes() -> str:
                 """Read the important contents that were once recorded"""
-                with open('notes.txt','r') as f:
+                with open('notes.txt','r',encoding="utf-8") as f:
                     text = f.read()
                 return text
 
@@ -402,7 +282,6 @@ class ChatBox():
             print('############# prompt_no_history #############')
 
             if not self.chat_with_agent_notes_object:
-                from agentflowz.main import AgentFactory,AgentType,EasyAgentz
                 agent = AgentFactory(AgentType.ReactAgent,tools = [take_notes,read_notes])
 
                 agt = EasyAgentz(agent)
