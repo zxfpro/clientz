@@ -5,7 +5,7 @@ import importlib.resources
 from typing import Dict, Any
 import yaml
 from llmada import BianXieAdapter
-from querypipz.director import BuilderFactory,BuilderType,Director
+from querypipz import BuilderFactory,BuilderType,Director
 from agentflowz.main import AgentFactory,AgentType,EasyAgentz
 
 def load_config():
@@ -195,40 +195,42 @@ class ChatBox():
             # 硬盘 + 内置硬盘 其实就是 大模型潜意识与知识库维度
             # 还要再加一些 寄存器的方式
             self.bx.set_model("gemini-2.5-flash-preview-04-17-nothinking")
-            director = Director(BuilderFactory(BuilderType.HistoryMemoryBuilder)) ###
+
+            director = Director(BuilderFactory(BuilderType.CHAT_HISTORY_MEMORY_BUILDER))
+
             query = director.construct()
             if len(prompt_with_history.split('\n')) == 1:
-                query.retriever = None
+                query.reload()
 
-            if prompt_no_history == "->上传":
+            if prompt_no_history == "上传记忆":
                 print('上传')
                 # 上传 (update)
-                query.update('\n'.join(prompt_with_history))
+                query.update(prompt_with_history)
+                yield '上传完成'
+            else:
+                
+                relevant_memories = query.retrieve_search(prompt_no_history)
+                print(relevant_memories,'relevant_memories')
+                memories_str = '\n'.join([i.metadata.get('docs') for i in relevant_memories])
+                print('############# RETRIVER START #############')
+                print(memories_str)
+                print('############# RETRIVER END #############')
+                # our_messages = [{"role": "user", "content": prompt_no_history}]
 
-            relevant_memories = query.retrieve_search(prompt_no_history)
-            memories_str = '\n'.join([i.text for i in relevant_memories])
-            print('############# RETRIVER START #############')
-            print(memories_str)
-            print('############# RETRIVER END #############')
-            our_messages = [{"role": "user", "content": prompt_no_history}]
-            # prompt_with_history
-            # prompt_no_history
-            # prompt_with_history = f"用户长期记忆: {memories_str}" + prompt_with_history
+                system_prompt = ""
+                prompt = system_prompt +"\n"+ memories_str +"\n"+prompt_with_history
 
-            system_prompt = ""
-            prompt = system_prompt +"\n"+ memories_str +"\n"+prompt_with_history
+                # assistant_info = ''
+                for word in self.bx.product_stream(prompt):
+                    yield word
+                    # assistant_info += word
 
-            assistant_info = ''
-            for word in self.bx.product_stream(prompt):
-                yield word
-                assistant_info += word
-
-            our_messages.append({"role": "assistant", "content": assistant_info})
-            inbound_information = '\n'.join([f"{i['role']}:{i['content']}" for i in our_messages])
-            print('############# Inbound START #############')
-            print(inbound_information)
-            print('############# Inbound END #############')
-            query.update(inbound_information)
+                # our_messages.append({"role": "assistant", "content": assistant_info})
+                # inbound_information = '\n'.join([f"{i['role']}:{i['content']}" for i in our_messages])
+                print('############# Inbound START #############')
+                # print(inbound_information)
+                print('############# Inbound END #############')
+                # query.update(inbound_information)
 
         elif model == 'Experts_V1':
             print(prompt_with_history,'prompt_with_history')
