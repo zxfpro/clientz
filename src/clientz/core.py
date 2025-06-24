@@ -7,6 +7,10 @@ import yaml
 from llmada import BianXieAdapter
 from querypipz import BuilderFactory,BuilderType,Director
 from agentflowz.main import AgentFactory,AgentType,EasyAgentz
+from contextlib import contextmanager
+import time
+from .log import Log
+logger = Log.logger
 
 def load_config():
     """ load config """
@@ -92,6 +96,18 @@ def extract_last_user_input(dialogue_text):
         return None
 
 
+
+
+@contextmanager
+def check_time(title:str,logger):
+    """ try catch"""
+    time1 = time.time()
+    yield
+    time2 = time.time()
+    logger.debug(f"{title}: {time2-time1}")
+
+    
+
 def extra_docs(inputs:str)->dict:
     """ docs """
     pattern1 = r'<context>(.*?)<\/context>'
@@ -117,6 +133,7 @@ class ChatBox():
         self._last_modified_time = None
         self._update_last_modified_time()
         self.init_lazy_parameter()
+        self.query = None
 
     def _update_last_modified_time(self):
         """更新存储的最后修改时间"""
@@ -194,43 +211,31 @@ class ChatBox():
             # 电脑 内存就是对应chat_history
             # 硬盘 + 内置硬盘 其实就是 大模型潜意识与知识库维度
             # 还要再加一些 寄存器的方式
+
             self.bx.set_model("gemini-2.5-flash-preview-04-17-nothinking")
-
-            director = Director(BuilderFactory(BuilderType.CHAT_HISTORY_MEMORY_BUILDER))
-
-            query = director.construct()
+            if not self.query:
+                director = Director(BuilderFactory(BuilderType.CHAT_HISTORY_MEMORY_BUILDER))
+                self.query = director.construct()
             if len(prompt_with_history.split('\n')) == 1:
-                query.reload()
+                self.query.reload()
 
             if prompt_no_history == "上传记忆":
-                print('上传')
-                # 上传 (update)
-                query.update(prompt_with_history)
+                self.query.update(prompt_with_history)
                 yield '上传完成'
             else:
-                
-                relevant_memories = query.retrieve_search(prompt_no_history)
-                print(relevant_memories,'relevant_memories')
-                memories_str = '\n'.join([i.metadata.get('docs') for i in relevant_memories])
-                print('############# RETRIVER START #############')
-                print(memories_str)
-                print('############# RETRIVER END #############')
-                # our_messages = [{"role": "user", "content": prompt_no_history}]
 
-                system_prompt = ""
-                prompt = system_prompt +"\n"+ memories_str +"\n"+prompt_with_history
+                with check_time("retriver_search_time",logger = logger):
+                    relevant_memories = self.query.retrieve_search(prompt_no_history)
+                with check_time("拼接内容",logger = logger):
+                    memories_str = '\n'.join([i.metadata.get('docs') for i in relevant_memories])
+                    # print(f'############# RETRIVER START #############\n {memories_str}\n ############# RETRIVER END #############')
 
-                # assistant_info = ''
+                    system_prompt = ""
+                    prompt = system_prompt +"\n"+ memories_str +"\n"+prompt_with_history
+                time1 = time.time()
                 for word in self.bx.product_stream(prompt):
+                    logger.debug(time.time()-time1)
                     yield word
-                    # assistant_info += word
-
-                # our_messages.append({"role": "assistant", "content": assistant_info})
-                # inbound_information = '\n'.join([f"{i['role']}:{i['content']}" for i in our_messages])
-                print('############# Inbound START #############')
-                # print(inbound_information)
-                print('############# Inbound END #############')
-                # query.update(inbound_information)
 
         elif model == 'Experts_V1':
             print(prompt_with_history,'prompt_with_history')

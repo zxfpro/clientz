@@ -322,6 +322,7 @@ if __name__ == "__main__":
     # 当通过 python -m YourPackageName 执行 __main__.py 时，__name__ 也是 "__main__"
     import argparse
     import uvicorn
+    from .log import Log
 
     parser = argparse.ArgumentParser(
         description="Start a simple HTTP server similar to http.server."
@@ -334,8 +335,16 @@ if __name__ == "__main__":
         default=8008,
         help='Specify alternate port [default: 8000]'
     )
+    parser.add_argument(
+        '--log-level',
+        type=str,
+        default='info',
+        choices=['debug', 'info', 'warning', 'error', 'critical'],
+        help='Set the logging level [default: info]'
+    )
 
     args = parser.parse_args()
+    Log.reset_level(args.log_level)
 
     # 使用 uvicorn.run() 来启动服务器
     # 参数对应于命令行选项
