@@ -222,6 +222,11 @@ class ChatBox():
             if prompt_no_history == "上传记忆":
                 self.query.update(prompt_with_history)
                 yield '上传完成'
+            elif prompt_no_history.startswith('上传文章'):
+                context = f"user: {prompt_no_history},\nassistant: 上传完成"
+                self.query.update(context)
+                yield '上传完成'
+
             else:
 
                 with check_time("retriver_search_time",logger = logger):
