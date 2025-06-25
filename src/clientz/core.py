@@ -191,7 +191,8 @@ class ChatBox():
         """
         self.check_and_trigger()
         prompt_no_history = extract_last_user_input(prompt_with_history)
-
+        logger.debug(f"# prompt_no_history : {prompt_no_history}")
+        logger.debug(f"# prompt_with_history : {prompt_with_history}")
         ## __init__ ##
 
         if model[4:] in self.model_pool:
@@ -200,19 +201,32 @@ class ChatBox():
                 yield word
 
         elif model == "config_info":
+            logger.info(f"running {model}")
             yield f"query_dir: {self.query_persist_dir}, dicts {str(self.dicts)}"
 
             if self.chat_with_agent_notes_object:
                 yield self.chat_with_agent_notes_object.tool_calls()
+        elif model == "long_memory_v2_retriver":
+            if not self.query:
+                director = Director(BuilderFactory(BuilderType.CHAT_HISTORY_MEMORY_BUILDER))
+                self.query = director.construct()
+            if len(prompt_with_history.split('\n')) == 1:
+                self.query.reload()
+
+            relevant_memories = self.query.retrieve_search(prompt_no_history)
+            memories_str = '\n'.join([i.metadata.get('docs') for i in relevant_memories])
+            yield memories_str
 
         elif model == 'chat_with_long_memory_v2':
-            # V1
-            # 单纯的向量库的管理方式
+            """
             # 电脑 内存就是对应chat_history
             # 硬盘 + 内置硬盘 其实就是 大模型潜意识与知识库维度
             # 还要再加一些 寄存器的方式
+            """
+            logger.info(f"running {model}")
 
             self.bx.set_model("gemini-2.5-flash-preview-04-17-nothinking")
+            system_prompt = ""
             if not self.query:
                 director = Director(BuilderFactory(BuilderType.CHAT_HISTORY_MEMORY_BUILDER))
                 self.query = director.construct()
@@ -223,19 +237,15 @@ class ChatBox():
                 self.query.update(prompt_with_history)
                 yield '上传完成'
             elif prompt_no_history.startswith('上传文章'):
-                context = f"user: {prompt_no_history},\nassistant: 上传完成"
+                context = f"user: {prompt_no_history}\n,assistant: 上传完成"
                 self.query.update(context)
                 yield '上传完成'
-
             else:
-
                 with check_time("retriver_search_time",logger = logger):
                     relevant_memories = self.query.retrieve_search(prompt_no_history)
                 with check_time("拼接内容",logger = logger):
                     memories_str = '\n'.join([i.metadata.get('docs') for i in relevant_memories])
-                    # print(f'############# RETRIVER START #############\n {memories_str}\n ############# RETRIVER END #############')
 
-                    system_prompt = ""
                     prompt = system_prompt +"\n"+ memories_str +"\n"+prompt_with_history
                 time1 = time.time()
                 for word in self.bx.product_stream(prompt):
@@ -243,9 +253,10 @@ class ChatBox():
                     yield word
 
         elif model == 'Experts_V1':
-            print(prompt_with_history,'prompt_with_history')
+            logger.info(f"running {model}")
+
             doc_dict = extra_docs(prompt_with_history)
-            print(doc_dict,'doc_dict')
+
             if not self.chat_with_agent_notes_object:
                 agent = AgentFactory(AgentType.ReactAgent,tools = [take_notes,read_notes])
 
@@ -257,6 +268,8 @@ class ChatBox():
 
 
         elif model == 'chat_with_Agent_notes':
+            logger.info(f"running {model}")
+
             def take_notes(text: str) -> None:
                 """Some important contents can be recorded"""
                 with open('notes.txt','a',encoding="utf-8") as f:
@@ -278,6 +291,9 @@ class ChatBox():
             yield result
 
         elif model == 'Custom_Agent_Latest':
+            logger.info(f"running {model}")
+
+
             def take_notes(text: str) -> None:
                 """Some important contents can be recorded"""
                 with open('notes.txt','a',encoding="utf-8") as f:
@@ -289,9 +305,9 @@ class ChatBox():
                     text = f.read()
                 return text
 
-            print('############# prompt_with_history #############')
-            print(prompt_with_history)
-            print('############# prompt_no_history #############')
+            logger.debug('############# prompt_with_history #############')
+            logger.debug(prompt_with_history)
+            logger.debug('############# prompt_no_history #############')
 
             if not self.chat_with_agent_notes_object:
                 agent = AgentFactory(AgentType.ReactAgent,tools = [take_notes,read_notes])
