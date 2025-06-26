@@ -237,7 +237,8 @@ class ChatBox():
                 self.query.update(prompt_with_history)
                 yield '上传完成'
             elif prompt_no_history.startswith('上传文章'):
-                context = f"user: {prompt_no_history}\n,assistant: 上传完成"
+                context = f"user: {prompt_no_history}\nassistant: 上传完成"
+                print(context,'contextxxxxxxxx')
                 self.query.update(context)
                 yield '上传完成'
             else:

@@ -335,22 +335,34 @@ if __name__ == "__main__":
         default=8008,
         help='Specify alternate port [default: 8000]'
     )
+
     parser.add_argument(
-        '--log-level',
+        '--env',
         type=str,
-        default='info',
-        choices=['debug', 'info', 'warning', 'error', 'critical'],
-        help='Set the logging level [default: info]'
+        default='dev', # 默认是开发环境
+        choices=['dev', 'prod'],
+        help='Set the environment (dev or prod) [default: dev]'
     )
 
     args = parser.parse_args()
-    Log.reset_level(args.log_level)
+
+    port = args.port
+    print(args.env)
+    if args.env == "dev":
+        port += 100
+        Log.reset_level('debug',env = args.env)
+        reload = False
+    elif args.env == "prod":
+        Log.reset_level('info',env = args.env)# ['debug', 'info', 'warning', 'error', 'critical']
+        reload = False
+    else:
+        reload = False
 
     # 使用 uvicorn.run() 来启动服务器
     # 参数对应于命令行选项
     uvicorn.run(
         app, # 要加载的应用，格式是 "module_name:variable_name"
         host="0.0.0.0",
-        port=args.port,
-        reload=False  # 启用热重载
+        port=port,
+        reload=reload  # 启用热重载
     )
