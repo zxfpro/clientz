@@ -4,7 +4,9 @@
 cd src; python -m clientz.server 8008
 
 # 测试启动
-cd src; uv run python -m clientz.server 8108 --log-level "debug"
+cd src; python -m clientz.server --env dev
+
+
 基本只需要修改
 core.py 
 config.yaml
