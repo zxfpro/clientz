@@ -289,7 +289,7 @@ class ChatBox():
                 date_str_ymd = now.strftime("%Y-%m-%d %H:%M:%S")  # 年-月-日
                 #TODO 安装最新版后更新
                 # 上传记忆${'tags':"成功",'date':"date_str_ymd"}
-                self.query.update(prompt_with_history)
+                self.query.update(prompt_with_history,metadata = {"tags":'合格',"date":date_str_ymd})
                 yield '上传完成'
             elif prompt_no_history.startswith('上传文章'):
                 context = f"user: {prompt_no_history}\nassistant: 上传完成"
