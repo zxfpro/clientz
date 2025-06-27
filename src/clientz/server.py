@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 import yaml
 from .core import ChatBox
-
+from .core import LLM_INFO
 
 class ChatMessage(BaseModel):
     """ x """
@@ -129,7 +129,8 @@ def load_config():
         return yaml.safe_load(f)
 
 
-dicts = load_config()
+# dicts = load_config()
+dicts = LLM_INFO
 ModelCards = dicts.get("ModelCards")
 Custom = dicts.get("Custom")
 
@@ -335,33 +336,63 @@ if __name__ == "__main__":
         default=8008,
         help='Specify alternate port [default: 8000]'
     )
+    # 创建一个互斥组用于环境选择
+    group = parser.add_mutually_exclusive_group()
 
-    parser.add_argument(
-        '--env',
-        type=str,
-        default='dev', # 默认是开发环境
-        choices=['dev', 'prod'],
-        help='Set the environment (dev or prod) [default: dev]'
+    # 添加 --dev 选项
+    group.add_argument(
+        '--dev',
+        action='store_true', # 当存在 --dev 时，该值为 True
+        help='Run in development mode (default).'
     )
+
+    # 添加 --prod 选项
+    group.add_argument(
+        '--prod',
+        action='store_true', # 当存在 --prod 时，该值为 True
+        help='Run in production mode.'
+    )
+
+
+    # parser.add_argument(
+    #     '--env',
+    #     type=str,
+    #     default='dev', # 默认是开发环境
+    #     choices=['dev', 'prod'],
+    #     help='Set the environment (dev or prod) [default: dev]'
+    # )
 
     args = parser.parse_args()
 
+    if args.prod:
+        env = "prod"
+    else:
+        # 如果 --prod 不存在，默认就是 dev
+        env = "dev"
+
+
+    reload = False # 默认不热重载
+
     port = args.port
-    print(args.env)
-    if args.env == "dev":
+    if env == "dev":
         port += 100
-        Log.reset_level('debug',env = args.env)
+        Log.reset_level('debug',env = env)
+        reload = True
+        app_import_string = "src.clientz.server:app" # <--- 关键修改：传递导入字符串
+    elif env == "prod":
+        Log.reset_level('info',env = env)# ['debug', 'info', 'warning', 'error', 'critical']
         reload = False
-    elif args.env == "prod":
-        Log.reset_level('info',env = args.env)# ['debug', 'info', 'warning', 'error', 'critical']
-        reload = False
+        app_import_string = app
     else:
         reload = False
+        app_import_string = app
 
     # 使用 uvicorn.run() 来启动服务器
     # 参数对应于命令行选项
+    
     uvicorn.run(
-        app, # 要加载的应用，格式是 "module_name:variable_name"
+        # app, # 要加载的应用，格式是 "module_name:variable_name"
+        app_import_string,
         host="0.0.0.0",
         port=port,
         reload=reload  # 启用热重载

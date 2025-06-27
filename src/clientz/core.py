@@ -11,7 +11,7 @@ from contextlib import contextmanager
 import time
 from .log import Log
 logger = Log.logger
-
+logger_path = 'logs/querypipz.log'
 
 """ config.yaml
 query_persist_dir: /Users/zhaoxuefeng/GitHub/test1/obsidian_kb/my_obsidian_notes
@@ -44,6 +44,7 @@ LLM_INFO = {
 ],
 "Custom": [
             "config_info",
+            "logger_info",
             "chat_with_long_memory_v2",
             "long_memory_v2_retriver",
             "chat_with_Agent_notes",
@@ -248,6 +249,13 @@ class ChatBox():
 
             if self.chat_with_agent_notes_object:
                 yield self.chat_with_agent_notes_object.tool_calls()
+
+        elif model == "logger_info":
+            logger.info(f"running {model}")
+            with open(logger_path,'r') as f:
+                text = f.read()
+            yield text[-10000:]
+
         elif model == "long_memory_v2_retriver":
             if not self.query:
                 director = Director(BuilderFactory(BuilderType.CHAT_HISTORY_MEMORY_BUILDER))
@@ -275,7 +283,12 @@ class ChatBox():
             if len(prompt_with_history.split('\n')) == 1:
                 self.query.reload()
 
-            if prompt_no_history == "上传记忆":
+            if prompt_no_history.startswith("上传记忆"):
+                import datetime
+                now = datetime.datetime.now()
+                date_str_ymd = now.strftime("%Y-%m-%d %H:%M:%S")  # 年-月-日
+                #TODO 安装最新版后更新
+                # 上传记忆${'tags':"成功",'date':"date_str_ymd"}
                 self.query.update(prompt_with_history)
                 yield '上传完成'
             elif prompt_no_history.startswith('上传文章'):
@@ -286,13 +299,11 @@ class ChatBox():
             else:
                 with check_time("retriver_search_time",logger = logger):
                     relevant_memories = self.query.retrieve_search(prompt_no_history)
-                with check_time("拼接内容",logger = logger):
                     memories_str = '\n'.join([i.metadata.get('docs') for i in relevant_memories])
-
                     prompt = system_prompt +"\n"+ memories_str +"\n"+prompt_with_history
                 time1 = time.time()
                 for word in self.bx.product_stream(prompt):
-                    logger.debug(time.time()-time1)
+                    logger.debug(f"first_tokens_time: {time.time()-time1}")
                     yield word
 
         elif model == 'Experts_V1':
