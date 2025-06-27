@@ -12,6 +12,46 @@ import time
 from .log import Log
 logger = Log.logger
 
+
+""" config.yaml
+query_persist_dir: /Users/zhaoxuefeng/GitHub/test1/obsidian_kb/my_obsidian_notes
+WORK_CANVAS_PATH:
+- /工程系统级设计/能力级别/人体训练设计/人体训练设计.canvas
+ModelCards:
+- gpt-4.1
+- cus-gemini-2.5-flash-preview-04-17-nothinking
+- cus-gemini-2.5-flash-preview-04-17-thinking
+Custom:
+- config_info
+- chat_with_long_memory_v2
+- long_memory_v2_retriver
+- chat_with_Agent_notes
+- Custom_Agent_Latest
+- Experts_V1
+"""
+
+
+
+LLM_INFO = {
+"query_persist_dir": "/Users/zhaoxuefeng/GitHub/test1/obsidian_kb/my_obsidian_notes",
+"WORK_CANVAS_PATH": [
+"/工程系统级设计/能力级别/人体训练设计/人体训练设计.canvas"
+],
+"ModelCards": [
+    "gpt-4.1",
+    "cus-gemini-2.5-flash-preview-04-17-nothinking",
+    "cus-gemini-2.5-flash-preview-04-17-thinking"
+],
+"Custom": [
+            "config_info",
+            "chat_with_long_memory_v2",
+            "long_memory_v2_retriver",
+            "chat_with_Agent_notes",
+            "Custom_Agent_Latest",
+            "Experts_V1"
+        ]
+}
+
 def load_config():
     """ load config """
     with importlib.resources.open_text('clientz', 'config.yaml') as f:
@@ -122,11 +162,13 @@ def extra_docs(inputs:str)->dict:
     result = {int(id): content for id, content in matches}
     return result
 
+
 class ChatBox():
     """ chatbox """
     def __init__(self) -> None:
         self.bx = BianXieAdapter()
-        self.dicts = load_config()
+        # self.dicts = load_config()
+        self.dicts = LLM_INFO
         self.query_persist_dir = self.dicts.get('query_persist_dir')
         self.model_pool = self.dicts.get("ModelCards")
         self.file_path = 'clientz/config.yaml'
