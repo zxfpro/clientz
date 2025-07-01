@@ -212,7 +212,7 @@ async def generate_mock_llm_response(prompt: str, stream: bool, model: str):
                 yield ChatCompletionChunkResponse(
                     id=response_id, model=model, choices=[chunk_choice], created=created_time
                 ).model_dump_json()
-                await asyncio.sleep(0.05) # Simulate token generation time
+                await asyncio.sleep(0.001) # Simulate token generation time
 
 
             # Final chunk: Send finish reason

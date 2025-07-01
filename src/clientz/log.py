@@ -92,6 +92,7 @@ class Logger:
             console_handler.setLevel(logging.INFO) # 控制台只显示 INFO 及以上级别的日志
             console_handler.setFormatter(formatter)
             logger.addHandler(console_handler)
+            
 
             # 5.2 文件处理器 (RotatingFileHandler 或 TimedRotatingFileHandler)
 

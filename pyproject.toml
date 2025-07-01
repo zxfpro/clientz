@@ -12,6 +12,7 @@ dependencies = [
  "requests>=2.32.3",
  "sse-starlette>=2.3.4",
  "toml>=0.10.2",
+ "toolsz==0.1.10",
  "uvicorn>=0.34.2",
 ]
 
@@ -21,3 +22,6 @@ clientz = [ "config.yaml",]
 [tool.pytest.ini_options]
 testpaths = [ "tests",]
 pythonpath = [ "src",]
+
+[tool.uv.sources]
+toolsz = { path = "../toolsz/dist/toolsz-0.1.12-py3-none-any.whl" }
