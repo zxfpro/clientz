@@ -6,7 +6,7 @@ from contextlib import contextmanager
 import importlib.resources
 from typing import Dict, Any
 import yaml
-from llmada import BianXieAdapter
+from llmada.core import BianXieAdapter
 from querypipz import BuilderFactory,BuilderType,Director
 from agentflowz.main import AgentFactory,AgentType,EasyAgentz
 from toolsz.dev import AutoAPIMD
