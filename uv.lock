@@ -371,7 +371,7 @@ wheels = [
 
 [[package]]
 name = "clientz"
-version = "0.1.13"
+version = "0.1.14"
 source = { virtual = "." }
 dependencies = [
     { name = "agentflowz" },
@@ -390,7 +390,7 @@ requires-dist = [
     { name = "agentflowz", specifier = ">=0.1.2" },
     { name = "fastapi", specifier = ">=0.115.12" },
     { name = "llmada", specifier = "==1.0.3" },
-    { name = "querypipz", specifier = "==0.1.20" },
+    { name = "querypipz", specifier = "==0.1.21" },
     { name = "requests", specifier = ">=2.32.3" },
     { name = "sse-starlette", specifier = ">=2.3.4" },
     { name = "toml", specifier = "==0.10.2" },
@@ -2424,7 +2424,7 @@ wheels = [
 
 [[package]]
 name = "querypipz"
-version = "0.1.20"
+version = "0.1.21"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "llama-index" },
@@ -2444,9 +2444,9 @@ dependencies = [
     { name = "toml" },
     { name = "toolsz" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cd/1f/5a8ea0207070639e63ec552da44872aed5be525265ffc4984994b68eabc9/querypipz-0.1.20.tar.gz", hash = "sha256:88312b6a12598b7a5374a6f2fe9522f0f930a7d9105cd429f56dc96a230ee799", size = 25575 }
+sdist = { url = "https://files.pythonhosted.org/packages/45/47/0a5e68f1ff80eabb9d6743836e046546be3278848c58d95599c91edc9259/querypipz-0.1.21.tar.gz", hash = "sha256:3894785f421a6864b8f1894b5e4fac931b1fad44c6fcdd55ad1e91c19e254138", size = 25557 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/9e/0e/0707b367cf59352cb79d492be35ad2a07a7fa0cbe8f67662940f6e92e48e/querypipz-0.1.20-py3-none-any.whl", hash = "sha256:149b6d29e30695dbcc3323cb43945c6030bd50884c33037aee8a79798305cb08", size = 34464 },
+    { url = "https://files.pythonhosted.org/packages/77/86/bfe221123fc632c8d7bd8327c56b8eb9110b34b94f1cca178b72740500e8/querypipz-0.1.21-py3-none-any.whl", hash = "sha256:926633334e49ecbd8aa93ab8680ee1846809d77e3e1cf48e5699a1d153761c74", size = 34468 },
 ]
 
 [[package]]
